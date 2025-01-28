@@ -1,0 +1,682 @@
+<template>
+	<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white/95">
+		<!-- Header and search sections remain the same -->
+		<div class="text-center text-black pt-8">
+			<h1 class="text-5xl font-light mb-4">Il Nostro Menu</h1>
+			<img
+				src="./assets/La-loggia-completo.svg"
+				class="mx-auto w-[150px] select-none pointer-events-none transition-opacity hover:opacity-90"
+				alt="La Loggia Logo" />
+		</div>
+
+		<div class="max-w-6xl mx-auto px-4 py-8">
+			<!-- Search and Filter Bar - Hide on Mobile -->
+			<div
+				class="hidden md:flex flex-col mb-12 space-y-4"
+				:class="{
+					'translate-y-0 opacity-100': isVisible,
+					'translate-y-8 opacity-0': !isVisible,
+				}">
+				<!-- Search input and categories remain the same -->
+				<div class="relative flex-grow w-full group">
+					<input
+						type="text"
+						v-model="searchQuery"
+						placeholder="Cerca piatti o tag..."
+						class="w-full px-6 py-3.5 bg-white/90 backdrop-blur border-0 rounded-full shadow-lg focus:ring-2 focus:ring-gray-300 focus:outline-none transition-all group-hover:shadow-xl placeholder-gray-400/80" />
+					<div class="absolute right-6 top-2/6 flex items-center gap-2">
+						<i class="fas fa-search text-gray-400/60"></i>
+					</div>
+				</div>
+
+				<!-- Categories Scroll Container -->
+				<div class="relative group">
+					<!-- Left Arrow -->
+					<button
+						@click="scrollCategories('left')"
+						class="absolute left-0 top-1/3 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center bg-white/90 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110"
+						:class="{ 'opacity-0': isScrolledLeft }">
+						<i class="fas fa-chevron-left text-gray-600"></i>
+					</button>
+
+					<!-- Right Arrow -->
+					<button
+						@click="scrollCategories('right')"
+						class="absolute right-0 top-1/3 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center bg-white/90 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110"
+						:class="{ 'opacity-0': isScrolledRight }">
+						<i class="fas fa-chevron-right text-gray-600"></i>
+					</button>
+
+					<div
+						ref="categoriesContainer"
+						@scroll="checkScroll"
+						class="flex items-center overflow-x-auto scrollbar-hide px-2 pb-8 pt-1 scroll-smooth">
+						<div class="flex gap-3 flex-nowrap">
+							<button
+								@click="selectedCategory = 'all'"
+								class="flex-shrink-0 px-5 py-2.5 rounded-full transition-all duration-200 hover:shadow-xl cursor-pointer flex items-center gap-2"
+								:class="{
+									'bg-black text-white shadow-md': selectedCategory === 'all',
+									'bg-white/90 shadow-sm hover:bg-gray-50':
+										selectedCategory !== 'all',
+								}">
+								<i class="fas fa-layer-group text-sm"></i>
+								<span class="whitespace-nowrap">Tutt</span>
+							</button>
+
+							<button
+								v-for="(cat, key) in categories"
+								@click="selectedCategory = key"
+								:key="key"
+								class="flex-shrink-0 px-4 py-2.5 rounded-full transition-all duration-200 flex items-center gap-2 hover:shadow-xl cursor-pointer"
+								:class="{
+									'bg-black text-white shadow-md': selectedCategory === key,
+									'bg-white/90 shadow-sm hover:bg-gray-50':
+										selectedCategory !== key,
+								}">
+								<i :class="cat.icon" class="text-sm w-5 text-center"></i>
+								<span class="whitespace-nowrap">{{ cat.name }}</span>
+							</button>
+						</div>
+					</div>
+
+					<!-- Reset Button -->
+					<button
+						v-if="hasActiveFilters"
+						@click="resetFilters"
+						class="mt-4 px-4 py-2 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mx-auto">
+						<i class="fas fa-undo-alt"></i>
+						<span>Reset filtri</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- Loading and Error states remain the same -->
+			<div v-if="loading" class="flex items-center justify-center py-20">
+				<i class="fas fa-spinner animate-spin text-3xl text-gray-600"></i>
+			</div>
+
+			<div v-else-if="error" class="text-center py-20">
+				<i class="fas fa-circle-exclamation text-4xl text-rose-600 mb-4"></i>
+				<p class="text-xl text-gray-800">Impossibile caricare il menu</p>
+				<p class="text-gray-600 mt-2">Per favore, riprova più tardi</p>
+			</div>
+
+			<!-- Menu Content -->
+			<div v-else class="space-y-16 mb-[100px]">
+				<section
+					v-for="(category, key, index) in groupedMenus"
+					:key="key"
+					class="space-y-8"
+					:class="{
+						'translate-y-0 opacity-100': isVisible,
+						'translate-y-8 opacity-0': !isVisible,
+					}"
+					:style="{ transitionDelay: `${index * 100}ms` }">
+					<h2
+						class="text-3xl font-light tracking-wide text-gray-900 flex items-center gap-3">
+						<i :class="category.icon" class="w-8 text-center text-gray-600"></i>
+						{{ category.name }}
+					</h2>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						<menu-item
+							v-for="item in category.items"
+							:key="item.id"
+							:item="item"
+							class="transform transition-all duration-500 hover:scale-[1.02] active:scale-95"
+							@click="openItemModal(item)" />
+					</div>
+				</section>
+
+				<!-- No Results State -->
+				<div
+					v-if="noResults"
+					class="flex flex-col items-center justify-center py-20">
+					<i class="fas fa-magnifying-glass text-4xl text-gray-400 mb-6"></i>
+					<p class="text-xl text-gray-800">Nessun piatto trovato</p>
+					<p class="text-gray-600 mt-2">Prova con termini di ricerca diversi</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- Item Detail Modal -->
+		<Transition
+			enter-active-class="transition duration-500 ease-out delay-150"
+			enter-from-class="opacity-0"
+			enter-to-class="opacity-100"
+			leave-active-class="transition duration-300 ease-in"
+			leave-from-class="opacity-100"
+			leave-to-class="opacity-0">
+			<div
+				v-if="selectedItem"
+				class="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-hidden"
+				@click="closeItemModal">
+				<!-- Modal Backdrop -->
+				<Transition
+					enter-active-class="transition-all duration-500 ease-out"
+					enter-from-class="opacity-0 backdrop-blur-0"
+					enter-to-class="opacity-100 backdrop-blur-[2px]"
+					leave-active-class="transition-all duration-300 ease-in"
+					leave-from-class="opacity-100 backdrop-blur-[2px]"
+					leave-to-class="opacity-0 backdrop-blur-0">
+					<div class="fixed inset-0 bg-black/15"></div>
+				</Transition>
+
+				<!-- Modal Content -->
+				<div
+					class="relative z-50 w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl transition-transform duration-500"
+					:class="{
+						'scale-100 opacity-100': selectedItem,
+						'scale-95 opacity-0': !selectedItem,
+					}"
+					@click.stop>
+					<!-- Close Button -->
+					<button
+						@click="closeItemModal"
+						class="absolute right-6 top-6 z-50 flex h-10 w-10 font-bold items-center justify-center rounded-full bg-white text-gray-700 transition-all hover:bg-white/90 cursor-pointer hover:scale-125 transition-transform">
+						<i class="fa-solid fa-xmark scale-150"></i>
+					</button>
+
+					<!-- Image Section -->
+					<div class="relative aspect-video">
+						<img
+							:src="selectedItem.image_url"
+							:alt="selectedItem.name"
+							class="h-full w-full object-cover" />
+						<div
+							class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+					</div>
+
+					<!-- Content Section -->
+					<div class="space-y-6 p-8">
+						<div class="flex items-start justify-between">
+							<div>
+								<h2 class="text-3xl font-semibold text-gray-900">
+									{{ selectedItem.name }}
+								</h2>
+								<div class="mt-2 flex items-center gap-4">
+									<span class="text-2xl font-medium text-gray-900"
+										>€{{ formatPrice(selectedItem.price) }}</span
+									>
+									<span
+										v-if="selectedItem.special_label"
+										class="rounded-full bg-red-50 px-4 py-1.5 text-sm font-medium text-red-600">
+										{{ selectedItem.special_label }}
+									</span>
+								</div>
+							</div>
+
+							<div class="flex flex-col items-end gap-2">
+								<div
+									v-if="selectedItem.preparation_time"
+									class="flex items-center text-gray-600">
+									<i class="fas fa-clock mr-2"></i>
+									{{ selectedItem.preparation_time }} min
+								</div>
+								<div
+									v-if="selectedItem.calories"
+									class="flex items-center text-gray-600">
+									<i class="fas fa-fire mr-2"></i>
+									{{ selectedItem.calories }} kcal
+								</div>
+								<div
+									v-if="selectedItem.spiciness"
+									class="flex items-center gap-1">
+									<i
+										v-for="n in selectedItem.spiciness"
+										:key="n"
+										class="fas fa-pepper-hot text-red-500"></i>
+								</div>
+							</div>
+						</div>
+
+						<!-- Full Description -->
+						<p class="text-lg leading-relaxed text-gray-600">
+							{{ selectedItem.description }}
+						</p>
+
+						<!-- All Tags -->
+						<div class="space-y-4">
+							<h3 class="text-lg font-medium text-gray-900">Tags</h3>
+							<div class="flex flex-wrap gap-2">
+								<span
+									v-for="tag in selectedItem.tags"
+									:key="tag.id"
+									class="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-800 transition-all hover:bg-gray-200">
+									<i v-if="tag.icon" :class="['fas', tag.icon, 'mr-2']"></i>
+									{{ tag.name }}
+								</span>
+							</div>
+						</div>
+
+						<!-- Nutritional Info -->
+						<div v-if="selectedItem.nutritional_info" class="space-y-4">
+							<h3 class="text-lg font-medium text-gray-900">
+								Nutritional Information
+							</h3>
+							<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+								<div
+									v-for="(value, key) in selectedItem.nutritional_info"
+									:key="key"
+									class="rounded-xl bg-gray-50 p-4 text-center">
+									<div class="text-sm text-gray-500">{{ key }}</div>
+									<div class="mt-1 text-lg font-medium text-gray-900">
+										{{ value }}
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Ingredients -->
+						<div v-if="selectedItem.ingredients?.length" class="space-y-4">
+							<h3 class="text-lg font-medium text-gray-900">Ingredients</h3>
+							<div class="flex flex-wrap gap-2">
+								<span
+									v-for="ingredient in selectedItem.ingredients"
+									:key="ingredient"
+									class="rounded-full bg-gray-100 px-4 py-2 text-sm text-gray-800">
+									{{ ingredient }}
+								</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</Transition>
+
+		<!-- Back to Top Button -->
+		<Transition
+			enter-active-class="transition-all duration-300 ease-out"
+			enter-from-class="opacity-0 translate-y-4"
+			enter-to-class="opacity-100 translate-y-0"
+			leave-active-class="transition-all duration-200 ease-in"
+			leave-from-class="opacity-100 translate-y-0"
+			leave-to-class="opacity-0 translate-y-4">
+			<button
+				v-show="showBackToTop"
+				@click="scrollToTop"
+				class="fixed bottom-8 right-8 z-40 p-3 w-15 h-15 rounded-full bg-black/80 backdrop-blur text-white shadow-xl hover:bg-black transition-all duration-300 hover:scale-110 transition-transform active:scale-95">
+				<i class="fas fa-arrow-up"></i>
+			</button>
+		</Transition>
+
+		<!-- Mobile Menu Button -->
+		<Transition
+			enter-active-class="transition-all duration-300 ease-out"
+			enter-from-class="opacity-0 translate-y-4"
+			enter-to-class="opacity-100 translate-y-0"
+			leave-active-class="transition-all duration-200 ease-in"
+			leave-from-class="opacity-100 translate-y-0"
+			leave-to-class="opacity-0 translate-y-4">
+			<button
+				v-show="!isMobileMenuOpen"
+				@click="toggleMobileMenu"
+				class="md:hidden fixed bottom-8 left-8 z-40 p-3 w-15 h-15 rounded-full bg-black/80 backdrop-blur text-white shadow-xl hover:bg-black transition-all duration-300 hover:scale-110 transition-transform active:scale-95">
+				<i class="fas fa-magnifying-glass"></i>
+			</button>
+		</Transition>
+
+		<!-- Mobile Menu Overlay -->
+		<Transition
+			enter-active-class="transition-all duration-300 ease-out"
+			enter-from-class="opacity-0 translate-x-full"
+			enter-to-class="opacity-100 translate-x-0"
+			leave-active-class="transition-all duration-200 ease-in"
+			leave-from-class="opacity-100 translate-x-0"
+			leave-to-class="opacity-0 translate-x-full">
+			<div
+				v-if="isMobileMenuOpen"
+				class="md:hidden fixed inset-0 z-50 bg-white/95 backdrop-blur-sm overflow-y-auto">
+				<!-- Mobile Menu Content -->
+				<div class="h-full flex flex-col p-6">
+					<!-- Close Button -->
+					<button
+						@click="toggleMobileMenu"
+						class="self-end p-2 text-gray-600 hover:text-gray-900">
+						<i class="fas fa-times text-2xl"></i>
+					</button>
+
+					<!-- Mobile Search Bar -->
+					<div class="relative mt-4">
+						<input
+							type="text"
+							v-model="searchQuery"
+							placeholder="Cerca piatti o tag..."
+							class="w-full px-6 py-3.5 bg-white/90 backdrop-blur border-0 rounded-full shadow-lg focus:ring-2 focus:ring-gray-300 focus:outline-none transition-all placeholder-gray-400/80"
+							@input="() => (isMobileSearchActive = searchQuery.length > 0)"
+							@keyup.enter="handleSearchSubmit" />
+						<div class="absolute right-6 top-3.5 flex items-center gap-2">
+							<i class="fas fa-search text-gray-400/60"></i>
+						</div>
+					</div>
+
+					<!-- Search Results -->
+					<div
+						v-if="isMobileSearchActive && filteredMenus.length > 0"
+						class="mt-6">
+						<h3 class="text-lg font-medium text-gray-900 mb-4">
+							Risultati ricerca
+						</h3>
+						<div class="space-y-3">
+							<button
+								v-for="item in filteredMenus.slice(0, 5)"
+								:key="item.id"
+								@click="selectItemAndClose(item)"
+								class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 transition-all text-left">
+								<img
+									v-if="item.image_url"
+									:src="item.image_url"
+									:alt="item.name"
+									class="w-12 h-12 rounded-lg object-cover" />
+								<div>
+									<div class="font-medium">{{ item.name }}</div>
+									<div class="text-sm text-gray-600">
+										€{{ formatPrice(item.price) }}
+									</div>
+								</div>
+							</button>
+						</div>
+					</div>
+
+					<!-- Categories List -->
+					<div
+						class="flex flex-col gap-4 mt-8"
+						:class="{ 'opacity-50': isMobileSearchActive }">
+						<button
+							@click="selectCategoryAndClose('all')"
+							class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all"
+							:class="{
+								'bg-black text-white': selectedCategory === 'all',
+								'hover:bg-gray-100': selectedCategory !== 'all',
+							}">
+							<i class="fas fa-layer-group w-6"></i>
+							<span>Tutto</span>
+						</button>
+
+						<button
+							v-for="(cat, key) in categories"
+							:key="key"
+							@click="selectCategoryAndClose(key)"
+							class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all"
+							:class="{
+								'bg-black text-white': selectedCategory === key,
+								'hover:bg-gray-100': selectedCategory !== key,
+							}">
+							<i :class="[cat.icon, 'w-6']"></i>
+							<span>{{ cat.name }}</span>
+						</button>
+					</div>
+
+					<!-- Mobile Reset Button -->
+					<button
+						v-if="hasActiveFilters"
+						@click="resetFilters"
+						class="mt-4 px-4 py-3 flex items-center justify-center gap-2 text-gray-600 hover:text-gray-900 transition-colors rounded-xl border border-gray-200">
+						<i class="fas fa-undo-alt"></i>
+						<span>Reset filtri</span>
+					</button>
+				</div>
+			</div>
+		</Transition>
+	</div>
+</template>
+
+<script>
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import axios from "axios";
+import MenuItem from "./components/MenuItem.vue";
+
+export default {
+	components: {
+		MenuItem,
+	},
+
+	setup() {
+		const loading = ref(true);
+		const error = ref(false);
+		const searchQuery = ref("");
+		const selectedCategory = ref("all");
+		const menus = ref([]);
+		const isVisible = ref(false);
+		const selectedItem = ref(null);
+		const categoriesContainer = ref(null);
+		const isScrolledLeft = ref(true);
+		const isScrolledRight = ref(false);
+		const showBackToTop = ref(false);
+		const isMobileMenuOpen = ref(false);
+		const isMobileSearchActive = ref(false);
+
+		const categories = {
+			antipasto: { icon: "fas fa-leaf", name: "Antipasti" },
+			pizza: { icon: "fas fa-pizza-slice", name: "Pizze" },
+			primo: { icon: "fas fa-utensils", name: "Primi Piatti" },
+			secondo: { icon: "fas fa-drumstick-bite", name: "Secondi Piatti" },
+			contorno: { icon: "fas fa-carrot", name: "Contorni" },
+			dolce: { icon: "fas fa-cake-candles", name: "Dolci" },
+			bevande: { icon: "fas fa-wine-bottle", name: "Bevande" },
+		};
+
+		const filteredMenus = computed(() => {
+			let filtered = menus.value;
+
+			if (selectedCategory.value !== "all") {
+				filtered = filtered.filter(
+					(item) => item.category === selectedCategory.value
+				);
+			}
+
+			if (searchQuery.value) {
+				const query = searchQuery.value.toLowerCase();
+				filtered = filtered.filter((item) => {
+					const nameMatch = item.name.toLowerCase().includes(query);
+					const tagMatch = item.tags.some((tag) =>
+						tag.name.toLowerCase().includes(query)
+					);
+					return nameMatch || tagMatch;
+				});
+			}
+
+			return filtered;
+		});
+
+		const groupedMenus = computed(() => {
+			const grouped = {};
+
+			Object.keys(categories).forEach((categoryKey) => {
+				const items = filteredMenus.value.filter(
+					(item) => item.category === categoryKey
+				);
+				if (items.length > 0) {
+					grouped[categoryKey] = {
+						...categories[categoryKey],
+						items,
+					};
+				}
+			});
+
+			return grouped;
+		});
+
+		const noResults = computed(
+			() => Object.keys(groupedMenus.value).length === 0 && !loading.value
+		);
+
+		const fetchMenu = async () => {
+			try {
+				const response = await axios.get("http://127.0.0.1:8001/api/menus");
+				if (response.data.success) {
+					menus.value = response.data.data;
+				}
+				loading.value = false;
+			} catch (err) {
+				console.error("Error fetching menu:", err);
+				error.value = true;
+				loading.value = false;
+			}
+		};
+
+		const formatPrice = (price) => Number(price).toFixed(2);
+
+		const openItemModal = (item) => {
+			selectedItem.value = item;
+			document.body.style.overflow = "hidden";
+		};
+
+		const closeItemModal = () => {
+			selectedItem.value = null;
+			document.body.style.overflow = "";
+		};
+
+		const scrollCategories = (direction) => {
+			if (!categoriesContainer.value) return;
+
+			const container = categoriesContainer.value;
+			const scrollAmount = container.clientWidth * 0.75;
+
+			container.scrollBy({
+				left: direction === "left" ? -scrollAmount : scrollAmount,
+				behavior: "smooth",
+			});
+		};
+
+		const checkScroll = () => {
+			if (!categoriesContainer.value) return;
+
+			const container = categoriesContainer.value;
+			isScrolledLeft.value = container.scrollLeft <= 0;
+			isScrolledRight.value =
+				container.scrollLeft + container.clientWidth >= container.scrollWidth;
+		};
+
+		const scrollToTop = () => {
+			window.scrollTo({ top: 0, behavior: "smooth" });
+		};
+
+		const handleScroll = () => {
+			showBackToTop.value = window.scrollY > 400;
+		};
+
+		const toggleMobileMenu = () => {
+			isMobileMenuOpen.value = !isMobileMenuOpen.value;
+			document.body.style.overflow = isMobileMenuOpen.value ? "hidden" : "";
+		};
+
+		const selectCategoryAndClose = (category) => {
+			selectedCategory.value = category;
+			toggleMobileMenu();
+		};
+
+		const selectItemAndClose = (item) => {
+			openItemModal(item);
+			toggleMobileMenu();
+			isMobileSearchActive.value = false;
+			searchQuery.value = "";
+		};
+
+		const handleSearchSubmit = () => {
+			if (searchQuery.value.trim()) {
+				toggleMobileMenu();
+				isMobileSearchActive.value = false;
+			}
+		};
+
+		const hasActiveFilters = computed(() => {
+			return searchQuery.value !== "" || selectedCategory.value !== "all";
+		});
+
+		const resetFilters = () => {
+			searchQuery.value = "";
+			selectedCategory.value = "all";
+			isMobileSearchActive.value = false;
+		};
+
+		onMounted(() => {
+			fetchMenu();
+			setTimeout(() => {
+				isVisible.value = true;
+			}, 100);
+			checkScroll();
+			window.addEventListener("scroll", handleScroll);
+		});
+
+		onUnmounted(() => {
+			window.removeEventListener("scroll", handleScroll);
+			document.body.style.overflow = "";
+		});
+
+		return {
+			loading,
+			error,
+			searchQuery,
+			selectedCategory,
+			categories,
+			groupedMenus,
+			noResults,
+			isVisible,
+			selectedItem,
+			openItemModal,
+			closeItemModal,
+			formatPrice,
+			categoriesContainer,
+			isScrolledLeft,
+			isScrolledRight,
+			scrollCategories,
+			checkScroll,
+			showBackToTop,
+			scrollToTop,
+			isMobileMenuOpen,
+			toggleMobileMenu,
+			selectCategoryAndClose,
+			isMobileSearchActive,
+			selectItemAndClose,
+			handleSearchSubmit,
+			hasActiveFilters,
+			resetFilters,
+			filteredMenus, // Add this line
+		};
+	},
+};
+</script>
+
+<style lang="scss" scoped>
+.scrollbar-hide::-webkit-scrollbar {
+	display: none;
+}
+
+.scrollbar-hide {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.transition-backdrop {
+	transition-property: backdrop-filter, background-color;
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-duration: 300ms;
+}
+
+.smooth-entrance {
+	transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+	display: none;
+}
+
+.mobile-menu-enter-active,
+.mobile-menu-leave-active {
+	transition: transform 0.3s ease-in-out;
+}
+
+.mobile-menu-enter-from,
+.mobile-menu-leave-to {
+	transform: translateX(100%);
+}
+
+/* Add these styles for better mobile menu scrolling */
+.mobile-menu-content {
+	max-height: 100vh;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+}
+</style>
