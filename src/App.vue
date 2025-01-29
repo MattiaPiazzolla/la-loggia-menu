@@ -1,5 +1,5 @@
 <template>
-	<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white/95">
+	<div class="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200">
 		<!-- Header and search sections remain the same -->
 		<div class="text-center text-black pt-8">
 			<h1 class="text-5xl font-light mb-4">Il Nostro Menu</h1>
@@ -181,7 +181,11 @@
 					<!-- Image Section -->
 					<div class="relative aspect-video">
 						<img
-							:src="selectedItem.image_url"
+							:src="
+								selectedItem.image_url
+									? selectedItem.image_url
+									: '../../public/default-menu-image-placeholder.png'
+							"
 							:alt="selectedItem.name"
 							class="h-full w-full object-cover" />
 						<div
@@ -233,19 +237,37 @@
 
 						<!-- Full Description -->
 						<p class="text-lg leading-relaxed text-gray-600">
-							{{ selectedItem.description }}
+							{{ truncateModalDescription(selectedItem.description) }}
+							<button
+								v-if="selectedItem.description.length > 300"
+								@click="toggleFullDescription"
+								class="ml-2 text-black hover:underline">
+								{{ showFullDescription ? "Mostra meno" : "Mostra tutto" }}
+							</button>
 						</p>
 
-						<!-- All Tags -->
-						<div class="space-y-4">
+						<!-- Beverage Label (New) -->
+						<div
+							v-if="getBeverageTag(selectedItem)"
+							class="text-xl font-bold text-gray-600 uppercase">
+							<i
+								v-if="getBeverageTag(selectedItem).icon"
+								:class="['fas', getBeverageTag(selectedItem).icon, 'mr-2']"></i>
+							{{ getBeverageDisplayName(getBeverageTag(selectedItem).name) }}
+						</div>
+
+						<!-- Modified Tags Section -->
+						<div
+							v-if="getNonBeverageTags(selectedItem).length"
+							class="space-y-4">
 							<h3 class="text-lg font-medium text-gray-900">Tags</h3>
 							<div class="flex flex-wrap gap-2">
 								<span
-									v-for="tag in selectedItem.tags"
+									v-for="tag in getNonBeverageTags(selectedItem)"
 									:key="tag.id"
 									class="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-800 transition-all hover:bg-gray-200">
 									<i v-if="tag.icon" :class="['fas', tag.icon, 'mr-2']"></i>
-									{{ tag.name }}
+									#{{ tag.name }}
 								</span>
 							</div>
 						</div>
@@ -446,6 +468,7 @@ export default {
 		const showBackToTop = ref(false);
 		const isMobileMenuOpen = ref(false);
 		const isMobileSearchActive = ref(false);
+		const showFullDescription = ref(false);
 
 		const categories = {
 			antipasto: { icon: "fas fa-leaf", name: "Antipasti" },
@@ -480,6 +503,25 @@ export default {
 			return filtered;
 		});
 
+		const beverageOrder = {
+			"bevande generiche": 1,
+			"caffe e digestivi": 2,
+			birre: 3,
+			vini: 4,
+		};
+
+		const sortBeverages = (items) => {
+			return items.sort((a, b) => {
+				const tagA = a.tags.find((t) => beverageOrder[t.name.toLowerCase()]);
+				const tagB = b.tags.find((t) => beverageOrder[t.name.toLowerCase()]);
+
+				const orderA = tagA ? beverageOrder[tagA.name.toLowerCase()] : 999;
+				const orderB = tagB ? beverageOrder[tagB.name.toLowerCase()] : 999;
+
+				return orderA - orderB;
+			});
+		};
+
 		const groupedMenus = computed(() => {
 			const grouped = {};
 
@@ -490,7 +532,7 @@ export default {
 				if (items.length > 0) {
 					grouped[categoryKey] = {
 						...categories[categoryKey],
-						items,
+						items: categoryKey === "bevande" ? sortBeverages(items) : items,
 					};
 				}
 			});
@@ -591,6 +633,52 @@ export default {
 			isMobileSearchActive.value = false;
 		};
 
+		const truncateModalDescription = (text) => {
+			if (!text || showFullDescription.value) return text;
+			return text.length > 300 ? text.substring(0, 300) + "..." : text;
+		};
+
+		const toggleFullDescription = () => {
+			showFullDescription.value = !showFullDescription.value;
+		};
+
+		const beverageDisplayNames = {
+			"bevande generiche": "Bibite",
+			"caffe e digestivi": "Caffè e Digestivi",
+			birre: "Birre",
+			vini: "Vini",
+		};
+
+		const getBeverageDisplayName = (tagName) => {
+			return beverageDisplayNames[tagName.toLowerCase()] || tagName;
+		};
+
+		const getBeverageTag = (item) => {
+			if (!item?.tags) return null;
+			return item.tags.find((tag) => {
+				const tagName = tag.name.toLowerCase();
+				return [
+					"bevande generiche",
+					"caffe e digestivi",
+					"birre",
+					"vini",
+				].includes(tagName);
+			});
+		};
+
+		const getNonBeverageTags = (item) => {
+			if (!item?.tags) return [];
+			return item.tags.filter((tag) => {
+				const tagName = tag.name.toLowerCase();
+				return ![
+					"bevande generiche",
+					"caffe e digestivi",
+					"birre",
+					"vini",
+				].includes(tagName);
+			});
+		};
+
 		onMounted(() => {
 			fetchMenu();
 			setTimeout(() => {
@@ -634,6 +722,12 @@ export default {
 			hasActiveFilters,
 			resetFilters,
 			filteredMenus, // Add this line
+			truncateModalDescription,
+			toggleFullDescription,
+			showFullDescription,
+			getBeverageDisplayName,
+			getBeverageTag,
+			getNonBeverageTags,
 		};
 	},
 };

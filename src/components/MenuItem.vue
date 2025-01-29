@@ -1,9 +1,9 @@
 <template>
-	<div class="group relative">
+	<div class="group relative h-full">
 		<!-- Container with Apple-style frosted glass effect -->
 		<div
-			class="relative overflow-hidden rounded-3xl bg-white/80 backdrop-blur-xl transition-all duration-500 ease-out hover:scale-[1.02] hover:shadow-2xl"
-			:class="{ 'opacity-60': !item.is_available }">
+			class="relative overflow-hidden rounded-3xl backdrop-blur-xl transition-all duration-500 ease-out hover:scale-[1.02] hover:shadow-2xl h-full flex flex-col"
+			:class="[cardColorClass, { 'opacity-60': !item.is_available }]">
 			<!-- Unavailable State Overlay -->
 			<div
 				v-if="!item.is_available"
@@ -15,9 +15,13 @@
 			</div>
 
 			<!-- Image Section -->
-			<div class="relative aspect-[4/3] overflow-hidden">
+			<div class="relative aspect-[4/3] overflow-hidden flex-shrink-0">
 				<img
-					:src="item.image_url"
+					:src="
+						item.image_url
+							? item.image_url
+							: '../../public/default-menu-image-placeholder.png'
+					"
 					:alt="item.name"
 					class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
 
@@ -38,7 +42,7 @@
 						:key="tag.id"
 						class="rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-gray-800 backdrop-blur-md transition-all duration-300 hover:bg-white">
 						<i v-if="tag.icon" :class="['fas', tag.icon, 'mr-2']"></i>
-						{{ tag.name }}
+						#{{ tag.name }}
 					</span>
 					<span
 						v-if="hasMoreTags"
@@ -49,26 +53,38 @@
 			</div>
 
 			<!-- Content Section with refined spacing -->
-			<div class="space-y-4 p-8">
-				<div class="flex items-start justify-between">
-					<h3 class="text-2xl font-semibold text-gray-900">
-						{{ item.name }}
-					</h3>
-					<span
-						v-if="item.special_label"
-						class="rounded-full bg-red-50 px-4 py-1.5 text-sm font-medium text-red-600">
-						{{ item.special_label }}
-					</span>
+			<div class="space-y-4 p-8 flex-grow flex flex-col justify-between">
+				<div class="space-y-4">
+					<div class="flex items-start justify-between">
+						<h3 class="text-2xl font-semibold text-gray-900">
+							{{ item.name }}
+						</h3>
+						<span
+							v-if="item.special_label"
+							class="rounded-full bg-red-50 px-4 py-1.5 text-sm font-medium text-red-600">
+							{{ item.special_label }}
+						</span>
+					</div>
+
+					<p
+						class="line-clamp-3 text-base leading-relaxed text-gray-600"
+						:title="item.description">
+						{{ truncateDescription(item.description) }}
+					</p>
+
+					<!-- New Beverage Label -->
+					<div
+						v-if="beverageTag"
+						class="text-lg font-bold text-gray-600 uppercase">
+						<i
+							v-if="beverageTag.icon"
+							:class="['fas', beverageTag.icon, 'mr-2']"></i>
+						{{ getBeverageDisplayName(beverageTag.name) }}
+					</div>
 				</div>
 
-				<p
-					class="line-clamp-3 text-base leading-relaxed text-gray-600"
-					:title="item.description">
-					{{ item.description }}
-				</p>
-
 				<!-- Refined metadata display -->
-				<div class="flex items-center gap-6 text-sm text-gray-500">
+				<div class="flex items-center gap-6 text-sm text-gray-500 mt-auto pt-4">
 					<span v-if="item.preparation_time" class="flex items-center">
 						<i class="fas fa-clock mr-2"></i>
 						{{ item.preparation_time }} min
@@ -115,20 +131,75 @@ const props = defineProps({
 	},
 });
 
-const displayTags = computed(() =>
-	props.item.tags.slice(0, props.maxDisplayTags)
-);
+const beverageDisplayNames = {
+	"bevande generiche": "Bibite",
+	"caffe e digestivi": "Caffè e Digestivi",
+	birre: "Birre",
+	vini: "Vini",
+};
+
+const getBeverageDisplayName = (tagName) => {
+	return beverageDisplayNames[tagName.toLowerCase()] || tagName;
+};
+
+const beverageTag = computed(() => {
+	return props.item.tags.find((tag) => {
+		const tagName = tag.name.toLowerCase();
+		return ["bevande generiche", "caffe e digestivi", "birre", "vini"].includes(
+			tagName
+		);
+	});
+});
+
+const displayTags = computed(() => {
+	const filteredTags = props.item.tags.filter((tag) => {
+		const tagName = tag.name.toLowerCase();
+		return ![
+			"bevande generiche",
+			"caffe e digestivi",
+			"birre",
+			"vini",
+		].includes(tagName);
+	});
+	return filteredTags.slice(0, props.maxDisplayTags);
+});
+
 const hasMoreTags = computed(
 	() => props.item.tags.length > props.maxDisplayTags
 );
 
 const formatPrice = (price) => Number(price).toFixed(2);
+
+const truncateDescription = (text) => {
+	if (!text) return "";
+	return text.length > 150 ? text.substring(0, 150) + "..." : text;
+};
+
+const cardColorClass = computed(() => {
+	const beverageTag = props.item.tags.find((tag) => {
+		const tagName = tag.name.toLowerCase();
+		return ["bevande generiche", "caffe e digestivi", "birre", "vini"].includes(
+			tagName
+		);
+	});
+
+	if (!beverageTag) return "bg-white/80";
+
+	const colorMap = {
+		"bevande generiche": "bg-blue-100/80",
+		"caffe e digestivi": "bg-orange-100/80",
+		birre: "bg-yellow-500/80",
+		vini: "bg-rose-50/80",
+	};
+
+	return colorMap[beverageTag.name.toLowerCase()] || "bg-white/80";
+});
 </script>
 
 <style scoped>
 .line-clamp-3 {
 	display: -webkit-box;
-	-webkit-line-clamp: 3;
+	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
 }
