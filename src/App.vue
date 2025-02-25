@@ -61,7 +61,7 @@
 										selectedCategory !== 'all',
 								}">
 								<i class="fas fa-layer-group text-sm"></i>
-								<span class="whitespace-nowrap">Tutt</span>
+								<span class="whitespace-nowrap">Tutto</span>
 							</button>
 
 							<button
@@ -119,7 +119,8 @@
 						{{ category.name }}
 					</h2>
 
-					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					<div
+						class="grid gap-6 grid-cols-1 min-[450px]:grid-cols-2 min-[680px]:grid-cols-3 min-[1200px]:grid-cols-4 max-[450px]:grid-cols-1">
 						<menu-item
 							v-for="item in category.items"
 							:key="item.id"
@@ -165,144 +166,188 @@
 
 				<!-- Modal Content -->
 				<div
-					class="relative z-50 w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl transition-transform duration-500"
+					class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6"
 					:class="{
-						'scale-100 opacity-100': selectedItem,
-						'scale-95 opacity-0': !selectedItem,
+						'opacity-100 pointer-events-auto': selectedItem,
+						'opacity-0 pointer-events-none': !selectedItem,
 					}"
-					@click.stop>
-					<!-- Close Button -->
-					<button
-						@click="closeItemModal"
-						class="absolute right-6 top-6 z-50 flex h-10 w-10 font-bold items-center justify-center rounded-full bg-white text-gray-700 transition-all hover:bg-white/90 cursor-pointer hover:scale-125 transition-transform">
-						<i class="fa-solid fa-xmark scale-150"></i>
-					</button>
+					@click.self="closeItemModal">
+					<!-- Modal Container - Full screen in landscape mode -->
+					<div
+						class="relative z-50 w-full h-full overflow-auto bg-white transition-transform duration-500 sm:h-auto sm:max-w-3xl sm:rounded-3xl sm:shadow-2xl landscape:flex landscape:flex-row landscape:max-h-full landscape:w-full landscape:h-full landscape:max-w-none landscape:rounded-none"
+						:class="{
+							'scale-100 opacity-100': selectedItem,
+							'scale-95 opacity-0': !selectedItem,
+						}"
+						@click.stop>
+						<!-- Close Button -->
+						<button
+							@click="closeItemModal"
+							class="fixed sm:absolute right-4 top-4 z-50 flex h-10 w-10 font-bold items-center justify-center rounded-full bg-white/90 text-gray-700 transition-all hover:bg-white hover:scale-125 shadow-md">
+							<i class="fa-solid fa-xmark scale-150"></i>
+						</button>
 
-					<!-- Image Section -->
-					<div class="relative aspect-video">
-						<img
-							:src="
-								selectedItem.image_url
-									? selectedItem.image_url
-									: '../../public/default-menu-image-placeholder.png'
-							"
-							:alt="selectedItem.name"
-							class="h-full w-full object-cover" />
+						<!-- Image Section - Adjusted for full screen landscape mode -->
 						<div
-							class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-					</div>
+							class="relative aspect-video landscape:w-1/2 landscape:h-full landscape:aspect-auto">
+							<img
+								:src="
+									selectedItem.image_url
+										? selectedItem.image_url
+										: '../../public/default-menu-image-placeholder.png'
+								"
+								:alt="selectedItem.name"
+								class="h-full w-full object-cover landscape:object-cover landscape:h-full" />
+							<div
+								class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+						</div>
 
-					<!-- Content Section -->
-					<div class="space-y-6 p-8">
-						<div class="flex items-start justify-between">
-							<div>
-								<h2 class="text-3xl font-semibold text-gray-900">
-									{{ selectedItem.name }}
-								</h2>
-								<div class="mt-2 flex items-center gap-4">
-									<span class="text-2xl font-medium text-gray-900"
-										>€{{ formatPrice(selectedItem.price) }}</span
-									>
+						<!-- Content Section - Scrollable with optimized layout for landscape -->
+						<div
+							class="p-6 sm:p-8 pb-20 landscape:w-1/2 landscape:overflow-y-auto landscape:pb-6 landscape:p-4 landscape:h-full">
+							<div
+								class="flex items-start justify-between flex-col sm:flex-row gap-4 sm:gap-0 landscape:flex-row landscape:gap-2">
+								<div>
+									<h2
+										class="text-2xl sm:text-3xl font-semibold text-gray-900 landscape:text-xl">
+										{{ selectedItem.name }}
+									</h2>
+									<div class="mt-2 flex items-center gap-4">
+										<span
+											class="text-xl sm:text-2xl font-medium text-gray-900 landscape:text-lg"
+											>€{{ formatPrice(selectedItem.price) }}</span
+										>
+										<span
+											v-if="selectedItem.special_label"
+											class="rounded-full bg-red-50 px-3 py-1 sm:px-4 sm:py-1.5 text-sm font-medium text-red-600 landscape:text-xs landscape:px-2 landscape:py-1">
+											{{ selectedItem.special_label }}
+										</span>
+									</div>
+								</div>
+
+								<div
+									class="flex flex-row sm:flex-col items-start sm:items-end gap-4 sm:gap-2 landscape:flex-row landscape:items-center landscape:gap-3">
+									<div
+										v-if="selectedItem.preparation_time"
+										class="flex items-center text-gray-600 landscape:text-sm">
+										<i class="fas fa-clock mr-2"></i>
+										{{ selectedItem.preparation_time }} min
+									</div>
+									<div
+										v-if="selectedItem.calories"
+										class="flex items-center text-gray-600 landscape:text-sm">
+										<i class="fas fa-fire mr-2"></i>
+										{{ selectedItem.calories }} kcal
+									</div>
+									<div
+										v-if="selectedItem.spiciness"
+										class="flex items-center gap-1">
+										<i
+											v-for="n in selectedItem.spiciness"
+											:key="n"
+											class="fas fa-pepper-hot text-red-500"></i>
+									</div>
+								</div>
+							</div>
+
+							<!-- Full Description -->
+							<p
+								class="text-base sm:text-lg leading-relaxed text-gray-600 landscape:text-sm landscape:mt-2">
+								{{ truncateModalDescription(selectedItem.description) }}
+								<button
+									v-if="selectedItem.description.length > 300"
+									@click="toggleFullDescription"
+									class="ml-2 text-black hover:underline">
+									{{ showFullDescription ? "Mostra meno" : "Mostra tutto" }}
+								</button>
+							</p>
+
+							<!-- Beverage Label -->
+							<div
+								v-if="getBeverageTag(selectedItem)"
+								class="text-lg sm:text-xl font-bold text-gray-600 uppercase landscape:text-base landscape:mt-3">
+								<i
+									v-if="getBeverageTag(selectedItem).icon"
+									:class="[
+										'fas',
+										getBeverageTag(selectedItem).icon,
+										'mr-2',
+									]"></i>
+								{{ getBeverageDisplayName(getBeverageTag(selectedItem).name) }}
+							</div>
+
+							<!-- Tags Section -->
+							<div
+								v-if="getNonBeverageTags(selectedItem).length"
+								class="space-y-3 sm:space-y-4 landscape:space-y-2 landscape:mt-3">
+								<h3
+									class="text-base sm:text-lg font-medium text-gray-900 landscape:text-sm">
+									Tags
+								</h3>
+								<div class="flex flex-wrap gap-2">
 									<span
-										v-if="selectedItem.special_label"
-										class="rounded-full bg-red-50 px-4 py-1.5 text-sm font-medium text-red-600">
-										{{ selectedItem.special_label }}
+										v-for="tag in getNonBeverageTags(selectedItem)"
+										:key="tag.id"
+										class="rounded-full bg-gray-100 px-3 py-1.5 sm:px-4 sm:py-2 text-sm font-medium text-gray-800 transition-all hover:bg-gray-200 landscape:px-2 landscape:py-1 landscape:text-xs">
+										<i v-if="tag.icon" :class="['fas', tag.icon, 'mr-2']"></i>
+										#{{ tag.name }}
 									</span>
 								</div>
 							</div>
 
-							<div class="flex flex-col items-end gap-2">
+							<!-- Nutritional Info -->
+							<div
+								v-if="selectedItem.nutritional_info"
+								class="space-y-3 sm:space-y-4 landscape:space-y-2 landscape:mt-3">
+								<h3
+									class="text-base sm:text-lg font-medium text-gray-900 landscape:text-sm">
+									Nutritional Information
+								</h3>
 								<div
-									v-if="selectedItem.preparation_time"
-									class="flex items-center text-gray-600">
-									<i class="fas fa-clock mr-2"></i>
-									{{ selectedItem.preparation_time }} min
-								</div>
-								<div
-									v-if="selectedItem.calories"
-									class="flex items-center text-gray-600">
-									<i class="fas fa-fire mr-2"></i>
-									{{ selectedItem.calories }} kcal
-								</div>
-								<div
-									v-if="selectedItem.spiciness"
-									class="flex items-center gap-1">
-									<i
-										v-for="n in selectedItem.spiciness"
-										:key="n"
-										class="fas fa-pepper-hot text-red-500"></i>
-								</div>
-							</div>
-						</div>
-
-						<!-- Full Description -->
-						<p class="text-lg leading-relaxed text-gray-600">
-							{{ truncateModalDescription(selectedItem.description) }}
-							<button
-								v-if="selectedItem.description.length > 300"
-								@click="toggleFullDescription"
-								class="ml-2 text-black hover:underline">
-								{{ showFullDescription ? "Mostra meno" : "Mostra tutto" }}
-							</button>
-						</p>
-
-						<!-- Beverage Label (New) -->
-						<div
-							v-if="getBeverageTag(selectedItem)"
-							class="text-xl font-bold text-gray-600 uppercase">
-							<i
-								v-if="getBeverageTag(selectedItem).icon"
-								:class="['fas', getBeverageTag(selectedItem).icon, 'mr-2']"></i>
-							{{ getBeverageDisplayName(getBeverageTag(selectedItem).name) }}
-						</div>
-
-						<!-- Modified Tags Section -->
-						<div
-							v-if="getNonBeverageTags(selectedItem).length"
-							class="space-y-4">
-							<h3 class="text-lg font-medium text-gray-900">Tags</h3>
-							<div class="flex flex-wrap gap-2">
-								<span
-									v-for="tag in getNonBeverageTags(selectedItem)"
-									:key="tag.id"
-									class="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-800 transition-all hover:bg-gray-200">
-									<i v-if="tag.icon" :class="['fas', tag.icon, 'mr-2']"></i>
-									#{{ tag.name }}
-								</span>
-							</div>
-						</div>
-
-						<!-- Nutritional Info -->
-						<div v-if="selectedItem.nutritional_info" class="space-y-4">
-							<h3 class="text-lg font-medium text-gray-900">
-								Nutritional Information
-							</h3>
-							<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-								<div
-									v-for="(value, key) in selectedItem.nutritional_info"
-									:key="key"
-									class="rounded-xl bg-gray-50 p-4 text-center">
-									<div class="text-sm text-gray-500">{{ key }}</div>
-									<div class="mt-1 text-lg font-medium text-gray-900">
-										{{ value }}
+									class="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4 landscape:grid-cols-2 landscape:gap-2">
+									<div
+										v-for="(value, key) in selectedItem.nutritional_info"
+										:key="key"
+										class="rounded-xl bg-gray-50 p-3 sm:p-4 text-center landscape:p-2">
+										<div
+											class="text-xs sm:text-sm text-gray-500 landscape:text-xs">
+											{{ key }}
+										</div>
+										<div
+											class="mt-1 text-base sm:text-lg font-medium text-gray-900 landscape:text-sm">
+											{{ value }}
+										</div>
 									</div>
 								</div>
 							</div>
-						</div>
 
-						<!-- Ingredients -->
-						<div v-if="selectedItem.ingredients?.length" class="space-y-4">
-							<h3 class="text-lg font-medium text-gray-900">Ingredients</h3>
-							<div class="flex flex-wrap gap-2">
-								<span
-									v-for="ingredient in selectedItem.ingredients"
-									:key="ingredient"
-									class="rounded-full bg-gray-100 px-4 py-2 text-sm text-gray-800">
-									{{ ingredient }}
-								</span>
+							<!-- Ingredients -->
+							<div
+								v-if="selectedItem.ingredients?.length"
+								class="space-y-3 sm:space-y-4 landscape:space-y-2 landscape:mt-3">
+								<h3
+									class="text-base sm:text-lg font-medium text-gray-900 landscape:text-sm">
+									Ingredients
+								</h3>
+								<div class="flex flex-wrap gap-2 landscape:gap-1.5">
+									<span
+										v-for="ingredient in selectedItem.ingredients"
+										:key="ingredient"
+										class="rounded-full bg-gray-100 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-gray-800 landscape:px-2 landscape:py-1 landscape:text-xs">
+										{{ ingredient }}
+									</span>
+								</div>
 							</div>
 						</div>
 					</div>
+
+					<!-- Backdrop overlay -->
+					<div
+						class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+						:class="{
+							'opacity-100': selectedItem,
+							'opacity-0': !selectedItem,
+						}"></div>
 				</div>
 			</div>
 		</Transition>

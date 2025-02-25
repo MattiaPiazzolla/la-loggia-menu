@@ -36,18 +36,34 @@
 				</div>
 
 				<!-- Modern Tags Display -->
-				<div class="absolute bottom-6 left-6 flex flex-wrap gap-2">
+				<div
+					class="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 flex flex-wrap gap-1 sm:gap-1.5 max-w-[90%]">
+					<!-- First Tag (Always visible) -->
 					<span
-						v-for="tag in displayTags"
-						:key="tag.id"
-						class="rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-gray-800 backdrop-blur-md transition-all duration-300 hover:bg-white">
-						<i v-if="tag.icon" :class="['fas', tag.icon, 'mr-2']"></i>
-						#{{ tag.name }}
+						v-if="displayTags[0]"
+						class="rounded-full bg-white/80 px-1.5 py-0.5 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs font-medium text-gray-800 backdrop-blur-md transition-all duration-300 hover:bg-white whitespace-nowrap overflow-hidden text-ellipsis">
+						<i
+							v-if="displayTags[0].icon"
+							:class="['fas', displayTags[0].icon, 'mr-1']"></i>
+						<span class="hidden sm:inline">#</span>{{ displayTags[0].name }}
 					</span>
+
+					<!-- Additional Tags (Only visible on larger screens) -->
+					<template v-if="!isMobileWidth">
+						<span
+							v-for="tag in displayTags.slice(1)"
+							:key="tag.id"
+							class="rounded-full bg-white/80 px-1.5 py-0.5 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs font-medium text-gray-800 backdrop-blur-md transition-all duration-300 hover:bg-white whitespace-nowrap overflow-hidden text-ellipsis">
+							<i v-if="tag.icon" :class="['fas', tag.icon, 'mr-1']"></i>
+							<span class="hidden sm:inline">#</span>{{ tag.name }}
+						</span>
+					</template>
+
+					<!-- Plus sign for additional tags -->
 					<span
-						v-if="hasMoreTags"
-						class="rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-gray-800 backdrop-blur-md">
-						+{{ item.tags.length - maxDisplayTags }}
+						v-if="shouldShowPlusSign"
+						class="rounded-full bg-white/80 px-1.5 py-0.5 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs font-medium text-gray-800 backdrop-blur-md whitespace-nowrap">
+						+{{ remainingTagsCount }}
 					</span>
 				</div>
 			</div>
@@ -106,7 +122,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 
 const props = defineProps({
 	item: {
@@ -193,6 +209,34 @@ const cardColorClass = computed(() => {
 	};
 
 	return colorMap[beverageTag.name.toLowerCase()] || "bg-white/80";
+});
+
+const isMobileWidth = ref(false);
+const checkMobileWidth = () => {
+	isMobileWidth.value = window.innerWidth < 600;
+};
+
+onMounted(() => {
+	checkMobileWidth();
+	window.addEventListener("resize", checkMobileWidth);
+});
+
+onUnmounted(() => {
+	window.removeEventListener("resize", checkMobileWidth);
+});
+
+const remainingTagsCount = computed(() => {
+	if (isMobileWidth.value) {
+		return props.item.tags.length - 1;
+	}
+	return props.item.tags.length - props.maxDisplayTags;
+});
+
+const shouldShowPlusSign = computed(() => {
+	if (isMobileWidth.value) {
+		return props.item.tags.length > 1;
+	}
+	return hasMoreTags.value;
 });
 </script>
 
