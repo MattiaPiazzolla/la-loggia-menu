@@ -1,12 +1,13 @@
 <template>
 	<div class="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200">
+		<StatusBanner />
 		<!-- Header and search sections remain the same -->
-		<div class="text-center text-black pt-8">
-			<h1 class="text-5xl font-light mb-4">Il Nostro Menu</h1>
-			<img
+		<div class="text-center text-black pt-20">
+			<!-- <img
 				src="./assets/La-loggia-completo.svg"
-				class="mx-auto w-[150px] select-none pointer-events-none transition-opacity hover:opacity-90"
-				alt="La Loggia Logo" />
+				class="mx-auto w-[200px] select-none pointer-events-none transition-opacity hover:opacity-90"
+				alt="La Loggia Logo" /> -->
+			<h3 class="text-lg font-medium uppercase">Menu</h3>
 		</div>
 
 		<div class="max-w-6xl mx-auto px-4 py-8">
@@ -142,215 +143,11 @@
 		</div>
 
 		<!-- Item Detail Modal -->
-		<Transition
-			enter-active-class="transition duration-500 ease-out delay-150"
-			enter-from-class="opacity-0"
-			enter-to-class="opacity-100"
-			leave-active-class="transition duration-300 ease-in"
-			leave-from-class="opacity-100"
-			leave-to-class="opacity-0">
-			<div
-				v-if="selectedItem"
-				class="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-hidden"
-				@click="closeItemModal">
-				<!-- Modal Backdrop -->
-				<Transition
-					enter-active-class="transition-all duration-500 ease-out"
-					enter-from-class="opacity-0 backdrop-blur-0"
-					enter-to-class="opacity-100 backdrop-blur-[2px]"
-					leave-active-class="transition-all duration-300 ease-in"
-					leave-from-class="opacity-100 backdrop-blur-[2px]"
-					leave-to-class="opacity-0 backdrop-blur-0">
-					<div class="fixed inset-0 bg-black/15"></div>
-				</Transition>
-
-				<!-- Modal Content -->
-				<div
-					class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6"
-					:class="{
-						'opacity-100 pointer-events-auto': selectedItem,
-						'opacity-0 pointer-events-none': !selectedItem,
-					}"
-					@click.self="closeItemModal">
-					<!-- Modal Container - Full screen in landscape mode -->
-					<div
-						class="relative z-50 w-full h-full overflow-auto bg-white transition-transform duration-500 sm:h-auto sm:max-w-3xl sm:rounded-3xl sm:shadow-2xl landscape:flex landscape:flex-row landscape:max-h-full landscape:w-full landscape:h-full landscape:max-w-none landscape:rounded-none"
-						:class="{
-							'scale-100 opacity-100': selectedItem,
-							'scale-95 opacity-0': !selectedItem,
-						}"
-						@click.stop>
-						<!-- Close Button -->
-						<button
-							@click="closeItemModal"
-							class="fixed sm:absolute right-4 top-4 z-50 flex h-10 w-10 font-bold items-center justify-center rounded-full bg-white/90 text-gray-700 transition-all hover:bg-white hover:scale-125 shadow-md">
-							<i class="fa-solid fa-xmark scale-150"></i>
-						</button>
-
-						<!-- Image Section - Adjusted for full screen landscape mode -->
-						<div
-							class="relative aspect-video landscape:w-1/2 landscape:h-full landscape:aspect-auto">
-							<img
-								:src="
-									selectedItem.image_url
-										? selectedItem.image_url
-										: '../../public/default-menu-image-placeholder.png'
-								"
-								:alt="selectedItem.name"
-								class="h-full w-full object-cover landscape:object-cover landscape:h-full" />
-							<div
-								class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-						</div>
-
-						<!-- Content Section - Scrollable with optimized layout for landscape -->
-						<div
-							class="p-6 sm:p-8 pb-20 landscape:w-1/2 landscape:overflow-y-auto landscape:pb-6 landscape:p-4 landscape:h-full">
-							<div
-								class="flex items-start justify-between flex-col sm:flex-row gap-4 sm:gap-0 landscape:flex-row landscape:gap-2">
-								<div>
-									<h2
-										class="text-2xl sm:text-3xl font-semibold text-gray-900 landscape:text-xl">
-										{{ selectedItem.name }}
-									</h2>
-									<div class="mt-2 flex items-center gap-4">
-										<span
-											class="text-xl sm:text-2xl font-medium text-gray-900 landscape:text-lg"
-											>€{{ formatPrice(selectedItem.price) }}</span
-										>
-										<span
-											v-if="selectedItem.special_label"
-											class="rounded-full bg-red-50 px-3 py-1 sm:px-4 sm:py-1.5 text-sm font-medium text-red-600 landscape:text-xs landscape:px-2 landscape:py-1">
-											{{ selectedItem.special_label }}
-										</span>
-									</div>
-								</div>
-
-								<div
-									class="flex flex-row sm:flex-col items-start sm:items-end gap-4 sm:gap-2 landscape:flex-row landscape:items-center landscape:gap-3">
-									<div
-										v-if="selectedItem.preparation_time"
-										class="flex items-center text-gray-600 landscape:text-sm">
-										<i class="fas fa-clock mr-2"></i>
-										{{ selectedItem.preparation_time }} min
-									</div>
-									<div
-										v-if="selectedItem.calories"
-										class="flex items-center text-gray-600 landscape:text-sm">
-										<i class="fas fa-fire mr-2"></i>
-										{{ selectedItem.calories }} kcal
-									</div>
-									<div
-										v-if="selectedItem.spiciness"
-										class="flex items-center gap-1">
-										<i
-											v-for="n in selectedItem.spiciness"
-											:key="n"
-											class="fas fa-pepper-hot text-red-500"></i>
-									</div>
-								</div>
-							</div>
-
-							<!-- Full Description -->
-							<p
-								class="text-base sm:text-lg leading-relaxed text-gray-600 landscape:text-sm landscape:mt-2">
-								{{ truncateModalDescription(selectedItem.description) }}
-								<button
-									v-if="selectedItem.description.length > 300"
-									@click="toggleFullDescription"
-									class="ml-2 text-black hover:underline">
-									{{ showFullDescription ? "Mostra meno" : "Mostra tutto" }}
-								</button>
-							</p>
-
-							<!-- Beverage Label -->
-							<div
-								v-if="getBeverageTag(selectedItem)"
-								class="text-lg sm:text-xl font-bold text-gray-600 uppercase landscape:text-base landscape:mt-3">
-								<i
-									v-if="getBeverageTag(selectedItem).icon"
-									:class="[
-										'fas',
-										getBeverageTag(selectedItem).icon,
-										'mr-2',
-									]"></i>
-								{{ getBeverageDisplayName(getBeverageTag(selectedItem).name) }}
-							</div>
-
-							<!-- Tags Section -->
-							<div
-								v-if="getNonBeverageTags(selectedItem).length"
-								class="space-y-3 sm:space-y-4 landscape:space-y-2 landscape:mt-3">
-								<h3
-									class="text-base sm:text-lg font-medium text-gray-900 landscape:text-sm">
-									Tags
-								</h3>
-								<div class="flex flex-wrap gap-2">
-									<span
-										v-for="tag in getNonBeverageTags(selectedItem)"
-										:key="tag.id"
-										class="rounded-full bg-gray-100 px-3 py-1.5 sm:px-4 sm:py-2 text-sm font-medium text-gray-800 transition-all hover:bg-gray-200 landscape:px-2 landscape:py-1 landscape:text-xs">
-										<i v-if="tag.icon" :class="['fas', tag.icon, 'mr-2']"></i>
-										#{{ tag.name }}
-									</span>
-								</div>
-							</div>
-
-							<!-- Nutritional Info -->
-							<div
-								v-if="selectedItem.nutritional_info"
-								class="space-y-3 sm:space-y-4 landscape:space-y-2 landscape:mt-3">
-								<h3
-									class="text-base sm:text-lg font-medium text-gray-900 landscape:text-sm">
-									Nutritional Information
-								</h3>
-								<div
-									class="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4 landscape:grid-cols-2 landscape:gap-2">
-									<div
-										v-for="(value, key) in selectedItem.nutritional_info"
-										:key="key"
-										class="rounded-xl bg-gray-50 p-3 sm:p-4 text-center landscape:p-2">
-										<div
-											class="text-xs sm:text-sm text-gray-500 landscape:text-xs">
-											{{ key }}
-										</div>
-										<div
-											class="mt-1 text-base sm:text-lg font-medium text-gray-900 landscape:text-sm">
-											{{ value }}
-										</div>
-									</div>
-								</div>
-							</div>
-
-							<!-- Ingredients -->
-							<div
-								v-if="selectedItem.ingredients?.length"
-								class="space-y-3 sm:space-y-4 landscape:space-y-2 landscape:mt-3">
-								<h3
-									class="text-base sm:text-lg font-medium text-gray-900 landscape:text-sm">
-									Ingredients
-								</h3>
-								<div class="flex flex-wrap gap-2 landscape:gap-1.5">
-									<span
-										v-for="ingredient in selectedItem.ingredients"
-										:key="ingredient"
-										class="rounded-full bg-gray-100 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-gray-800 landscape:px-2 landscape:py-1 landscape:text-xs">
-										{{ ingredient }}
-									</span>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Backdrop overlay -->
-					<div
-						class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-						:class="{
-							'opacity-100': selectedItem,
-							'opacity-0': !selectedItem,
-						}"></div>
-				</div>
-			</div>
-		</Transition>
+		<item-detail-modal
+			v-if="selectedItem"
+			:modelValue="!!selectedItem"
+			:item="selectedItem"
+			@update:modelValue="closeItemModal" />
 
 		<!-- Back to Top Button -->
 		<Transition
@@ -363,7 +160,7 @@
 			<button
 				v-show="showBackToTop"
 				@click="scrollToTop"
-				class="fixed bottom-8 right-8 z-40 p-3 w-15 h-15 rounded-full bg-black/80 backdrop-blur text-white shadow-xl hover:bg-black transition-all duration-300 hover:scale-110 transition-transform active:scale-95">
+				class="fixed bottom-8 right-8 z-40 p-3 w-12.5 h-12.5 rounded-full bg-black/80 backdrop-blur text-white shadow-xl hover:bg-black transition-all duration-300 hover:scale-110 transition-transform active:scale-95">
 				<i class="fas fa-arrow-up"></i>
 			</button>
 		</Transition>
@@ -379,7 +176,7 @@
 			<button
 				v-show="!isMobileMenuOpen"
 				@click="toggleMobileMenu"
-				class="md:hidden fixed bottom-8 left-8 z-40 p-3 w-15 h-15 rounded-full bg-black/80 backdrop-blur text-white shadow-xl hover:bg-black transition-all duration-300 hover:scale-110 transition-transform active:scale-95">
+				class="md:hidden fixed bottom-8 left-8 z-40 p-3 w-12.5 h-12.5 rounded-full bg-black/80 backdrop-blur text-white shadow-xl hover:bg-black transition-all duration-300 hover:scale-110 transition-transform active:scale-95">
 				<i class="fas fa-magnifying-glass"></i>
 			</button>
 		</Transition>
@@ -483,6 +280,9 @@
 						<i class="fas fa-undo-alt"></i>
 						<span>Reset filtri</span>
 					</button>
+					<div class="py-3 text-white select-none">
+						Created by Mattia Piazzolla
+					</div>
 				</div>
 			</div>
 		</Transition>
@@ -493,10 +293,14 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import axios from "axios";
 import MenuItem from "./components/MenuItem.vue";
+import StatusBanner from "./components/StatusBanner.vue";
+import ItemDetailModal from "./components/ItemDetailModal.vue";
 
 export default {
 	components: {
 		MenuItem,
+		StatusBanner,
+		ItemDetailModal,
 	},
 
 	setup() {
