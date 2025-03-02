@@ -2,12 +2,12 @@
 	<div class="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200">
 		<StatusBanner />
 		<!-- Header and search sections remain the same -->
-		<div class="text-center text-black pt-20">
-			<!-- <img
+		<div class="flex text-center text-black pt-20">
+			<img
 				src="./assets/La-loggia-completo.svg"
 				class="mx-auto w-[200px] select-none pointer-events-none transition-opacity hover:opacity-90"
-				alt="La Loggia Logo" /> -->
-			<h3 class="text-lg font-medium uppercase">Menu</h3>
+				alt="La Loggia Logo" />
+			<!-- <h3 class="text-lg font-medium uppercase">Menu</h3> -->
 		</div>
 
 		<div class="max-w-6xl mx-auto px-4 py-8">
