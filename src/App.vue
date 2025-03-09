@@ -1,98 +1,15 @@
 <template>
 	<div class="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200">
 		<StatusBanner />
-		<!-- Header and search sections remain the same -->
-		<div class="flex text-center text-black pt-20">
-			<img
-				src="./assets/La-loggia-completo.svg"
-				class="mx-auto w-[200px] select-none pointer-events-none transition-opacity hover:opacity-90"
-				alt="La Loggia Logo" />
-			<!-- <h3 class="text-lg font-medium uppercase">Menu</h3> -->
-		</div>
-
+		<Header />
 		<div class="max-w-6xl mx-auto px-4 py-8">
-			<!-- Search and Filter Bar - Hide on Mobile -->
-			<div
-				class="hidden md:flex flex-col mb-12 space-y-4"
-				:class="{
-					'translate-y-0 opacity-100': isVisible,
-					'translate-y-8 opacity-0': !isVisible,
-				}">
-				<!-- Search input and categories remain the same -->
-				<div class="relative flex-grow w-full group">
-					<input
-						type="text"
-						v-model="searchQuery"
-						placeholder="Cerca piatti o tag..."
-						class="w-full px-6 py-3.5 bg-white/90 backdrop-blur border-0 rounded-full shadow-lg focus:ring-2 focus:ring-gray-300 focus:outline-none transition-all group-hover:shadow-xl placeholder-gray-400/80" />
-					<div class="absolute right-6 top-2/6 flex items-center gap-2">
-						<i class="fas fa-search text-gray-400/60"></i>
-					</div>
-				</div>
+			<SearchBar
+				:categories="categories"
+				v-model="searchQuery"
+				v-model:selectedCategory="selectedCategory"
+				:isVisible="isVisible" />
 
-				<!-- Categories Scroll Container -->
-				<div class="relative group">
-					<!-- Left Arrow -->
-					<button
-						@click="scrollCategories('left')"
-						class="absolute left-0 top-1/3 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center bg-white/90 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110"
-						:class="{ 'opacity-0': isScrolledLeft }">
-						<i class="fas fa-chevron-left text-gray-600"></i>
-					</button>
-
-					<!-- Right Arrow -->
-					<button
-						@click="scrollCategories('right')"
-						class="absolute right-0 top-1/3 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center bg-white/90 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110"
-						:class="{ 'opacity-0': isScrolledRight }">
-						<i class="fas fa-chevron-right text-gray-600"></i>
-					</button>
-
-					<div
-						ref="categoriesContainer"
-						@scroll="checkScroll"
-						class="flex items-center overflow-x-auto scrollbar-hide px-2 pb-8 pt-1 scroll-smooth">
-						<div class="flex gap-3 flex-nowrap">
-							<button
-								@click="selectedCategory = 'all'"
-								class="flex-shrink-0 px-5 py-2.5 rounded-full transition-all duration-200 hover:shadow-xl cursor-pointer flex items-center gap-2"
-								:class="{
-									'bg-black text-white shadow-md': selectedCategory === 'all',
-									'bg-white/90 shadow-sm hover:bg-gray-50':
-										selectedCategory !== 'all',
-								}">
-								<i class="fas fa-layer-group text-sm"></i>
-								<span class="whitespace-nowrap">Tutto</span>
-							</button>
-
-							<button
-								v-for="(cat, key) in categories"
-								@click="selectedCategory = key"
-								:key="key"
-								class="flex-shrink-0 px-4 py-2.5 rounded-full transition-all duration-200 flex items-center gap-2 hover:shadow-xl cursor-pointer"
-								:class="{
-									'bg-black text-white shadow-md': selectedCategory === key,
-									'bg-white/90 shadow-sm hover:bg-gray-50':
-										selectedCategory !== key,
-								}">
-								<i :class="cat.icon" class="text-sm w-5 text-center"></i>
-								<span class="whitespace-nowrap">{{ cat.name }}</span>
-							</button>
-						</div>
-					</div>
-
-					<!-- Reset Button -->
-					<button
-						v-if="hasActiveFilters"
-						@click="resetFilters"
-						class="mt-4 px-4 py-2 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mx-auto">
-						<i class="fas fa-undo-alt"></i>
-						<span>Reset filtri</span>
-					</button>
-				</div>
-			</div>
-
-			<!-- Loading and Error states remain the same -->
+			<!-- Loading and Error states -->
 			<div v-if="loading" class="flex items-center justify-center py-20">
 				<i class="fas fa-spinner animate-spin text-3xl text-gray-600"></i>
 			</div>
@@ -104,7 +21,7 @@
 			</div>
 
 			<!-- Menu Content -->
-			<div v-else class="space-y-16 mb-[100px]">
+			<div v-else class="space-y-16">
 				<section
 					v-for="(category, key, index) in groupedMenus"
 					:key="key"
@@ -151,32 +68,40 @@
 
 		<!-- Back to Top Button -->
 		<Transition
-			enter-active-class="transition-all duration-300 ease-out"
+			enter-active-class="transition-all duration-500 ease-out"
 			enter-from-class="opacity-0 translate-y-4"
 			enter-to-class="opacity-100 translate-y-0"
-			leave-active-class="transition-all duration-200 ease-in"
+			leave-active-class="transition-all duration-500 ease-in"
 			leave-from-class="opacity-100 translate-y-0"
 			leave-to-class="opacity-0 translate-y-4">
 			<button
 				v-show="showBackToTop"
 				@click="scrollToTop"
-				class="fixed bottom-8 right-8 z-40 p-3 w-12.5 h-12.5 rounded-full bg-black/80 backdrop-blur text-white shadow-xl hover:bg-black transition-all duration-300 hover:scale-110 transition-transform active:scale-95">
+				class="fixed bottom-8 right-8 z-40 p-3 w-12.5 h-12.5 rounded-full bg-black/80 backdrop-blur text-white shadow-xl hover:bg-black transition-all duration-500 hover:scale-110 transition-transform active:scale-95"
+				:class="{
+					'opacity-25': isAtBottom && !isScrollingUp,
+					'opacity-100': !isAtBottom || isScrollingUp,
+				}">
 				<i class="fas fa-arrow-up"></i>
 			</button>
 		</Transition>
 
 		<!-- Mobile Menu Button -->
 		<Transition
-			enter-active-class="transition-all duration-300 ease-out"
+			enter-active-class="transition-all duration-500 ease-out"
 			enter-from-class="opacity-0 translate-y-4"
 			enter-to-class="opacity-100 translate-y-0"
-			leave-active-class="transition-all duration-200 ease-in"
+			leave-active-class="transition-all duration-500 ease-in"
 			leave-from-class="opacity-100 translate-y-0"
 			leave-to-class="opacity-0 translate-y-4">
 			<button
 				v-show="!isMobileMenuOpen"
 				@click="toggleMobileMenu"
-				class="md:hidden fixed bottom-8 left-8 z-40 p-3 w-12.5 h-12.5 rounded-full bg-black/80 backdrop-blur text-white shadow-xl hover:bg-black transition-all duration-300 hover:scale-110 transition-transform active:scale-95">
+				class="md:hidden fixed bottom-8 left-8 z-40 p-3 w-12.5 h-12.5 rounded-full bg-black/80 backdrop-blur text-white shadow-xl hover:bg-black transition-all duration-500 hover:scale-110 transition-transform active:scale-95"
+				:class="{
+					'opacity-25': isAtBottom && !isScrollingUp,
+					'opacity-100': !isAtBottom || isScrollingUp,
+				}">
 				<i class="fas fa-magnifying-glass"></i>
 			</button>
 		</Transition>
@@ -191,7 +116,7 @@
 			leave-to-class="opacity-0 translate-x-full">
 			<div
 				v-if="isMobileMenuOpen"
-				class="md:hidden fixed inset-0 z-50 bg-white/95 backdrop-blur-sm overflow-y-auto">
+				class="md:hidden fixed inset-0 z-50 bg-white/95 backdrop-blur-sm overflow-y-auto h-full">
 				<!-- Mobile Menu Content -->
 				<div class="h-full flex flex-col p-6">
 					<!-- Close Button -->
@@ -286,6 +211,7 @@
 				</div>
 			</div>
 		</Transition>
+		<Footer />
 	</div>
 </template>
 
@@ -295,12 +221,18 @@ import axios from "axios";
 import MenuItem from "./components/MenuItem.vue";
 import StatusBanner from "./components/StatusBanner.vue";
 import ItemDetailModal from "./components/ItemDetailModal.vue";
+import Header from "./components/Header.vue";
+import SearchBar from "./components/SearchBar.vue";
+import Footer from "./components/Footer.vue"; // Add this import
 
 export default {
 	components: {
 		MenuItem,
 		StatusBanner,
 		ItemDetailModal,
+		Header,
+		SearchBar,
+		Footer, // Add this component
 	},
 
 	setup() {
@@ -318,6 +250,9 @@ export default {
 		const isMobileMenuOpen = ref(false);
 		const isMobileSearchActive = ref(false);
 		const showFullDescription = ref(false);
+		const isAtBottom = ref(false);
+		const isScrollingUp = ref(false);
+		let lastScrollTop = 0;
 
 		const categories = {
 			antipasto: { icon: "fas fa-leaf", name: "Antipasti" },
@@ -445,7 +380,21 @@ export default {
 		};
 
 		const handleScroll = () => {
-			showBackToTop.value = window.scrollY > 400;
+			const st = window.pageYOffset || document.documentElement.scrollTop;
+			const windowHeight = window.innerHeight;
+			const documentHeight = document.documentElement.scrollHeight;
+
+			// Check if we're at the bottom (with a 50px threshold for smoother transition)
+			isAtBottom.value = windowHeight + st >= documentHeight - 50;
+
+			// Check scroll direction with debounce-like behavior
+			isScrollingUp.value =
+				st < lastScrollTop && Math.abs(st - lastScrollTop) > 5;
+
+			// Show back to top button after 400px scroll
+			showBackToTop.value = st > 400;
+
+			lastScrollTop = st <= 0 ? 0 : st;
 		};
 
 		const toggleMobileMenu = () => {
@@ -577,6 +526,8 @@ export default {
 			getBeverageDisplayName,
 			getBeverageTag,
 			getNonBeverageTags,
+			isAtBottom,
+			isScrollingUp,
 		};
 	},
 };
@@ -621,5 +572,10 @@ export default {
 	max-height: 100vh;
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
+}
+
+/* Add smooth transitions for opacity */
+button {
+	transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>

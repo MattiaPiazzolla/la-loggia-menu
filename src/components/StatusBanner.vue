@@ -163,15 +163,29 @@
 
 							<a
 								href="#"
-								target="_blank"
 								class="p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors flex flex-col items-center text-center col-span-2 group">
-								<div class="flex space-x-6 mb-2">
-									<i
-										class="fab fa-facebook-f text-gray-400 group-hover:text-blue-600"></i>
-									<i
-										class="fab fa-instagram text-gray-400 group-hover:text-pink-600"></i>
-									<i
-										class="fab fa-tripadvisor text-gray-400 group-hover:text-green-600"></i>
+								<div class="flex space-x-6 mb-2 items-center">
+									<a
+										href="https://www.facebook.com/lalogliaristorante"
+										target="_blank"
+										class="text-gray-400 hover:text-blue-600 transition-colors">
+										<i class="fab fa-facebook-f"></i>
+									</a>
+									<a
+										href="https://www.instagram.com/ristorantelaloggia"
+										target="_blank"
+										class="text-gray-400 hover:text-pink-600 transition-colors">
+										<i class="fab fa-instagram"></i>
+									</a>
+									<a
+										href="https://www.tripadvisor.com/Restaurant_Review-your-restaurant-id"
+										target="_blank"
+										class="flex items-center">
+										<img
+											src="../assets/tripadvisor.svg"
+											alt="TripAdvisor"
+											class="w-4 h-4 transition-all duration-300 filter grayscale hover:filter-none hover:brightness-0 hover:invert" />
+									</a>
 								</div>
 								<span class="text-xs text-gray-800">Seguici sui social</span>
 							</a>

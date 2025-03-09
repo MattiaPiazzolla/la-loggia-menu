@@ -171,12 +171,11 @@ const getBeverageDisplayName = (tagName) => {
 
 const getBeverageIcon = (tagName) => {
 	const iconMap = {
-		"bevande generiche": "fa-glass-water",
+		"bevande generiche": "fa-wine-bottle",
 		"caffe e digestivi": "fa-mug-hot",
 		birre: "fa-beer-mug-empty",
 		vini: "fa-wine-glass",
 	};
-
 	return iconMap[tagName.toLowerCase()] || "fa-utensils";
 };
 
